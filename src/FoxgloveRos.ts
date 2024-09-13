@@ -22,6 +22,7 @@ import WebSocket from 'isomorphic-ws';
 import { Ros } from 'roslib';
 
 class FoxgloveSocket {
+  #ws: WebSocket;
   #client: FoxgloveClient;
   #ros: Ros & { isConnected: boolean };
   #isRos2: boolean;
@@ -45,9 +46,8 @@ class FoxgloveSocket {
   #callId = 0;
 
   constructor(url: string, ros: Ros, isRos2 = true) {
-    this.#client = new FoxgloveClient({
-      ws: new WebSocket(url, [FoxgloveClient.SUPPORTED_SUBPROTOCOL]),
-    });
+    this.#ws = new WebSocket(url, [FoxgloveClient.SUPPORTED_SUBPROTOCOL]);
+    this.#client = new FoxgloveClient({ ws: this.#ws });
     this.#ros = ros;
     this.#isRos2 = isRos2;
 
@@ -99,6 +99,10 @@ class FoxgloveSocket {
     this.#client.on('error', (event) => {
       this.#ros.emit('error', event);
     });
+  }
+
+  get readyState() {
+    return this.#ws.readyState;
   }
 
   close() {
@@ -416,6 +420,8 @@ class FoxgloveSocket {
 }
 
 export class FoxgloveRos extends Ros {
+  declare socket: FoxgloveSocket | null;
+
   constructor(options: {
     url?: string;
   }) {
@@ -431,6 +437,8 @@ export class FoxgloveRos extends Ros {
   }
 
   connect(url: string) {
-    Object.assign(this, { socket: new FoxgloveSocket(url, this) });
+    if (!this.socket || this.socket.readyState === WebSocket.CLOSED) {
+      this.socket = new FoxgloveSocket(url, this);
+    }
   }
 }
