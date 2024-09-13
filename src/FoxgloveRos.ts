@@ -416,8 +416,6 @@ class FoxgloveSocket {
 }
 
 export class FoxgloveRos extends Ros {
-  socket: FoxgloveSocket | null = null;
-
   constructor(options: {
     url?: string;
   }) {
@@ -433,6 +431,6 @@ export class FoxgloveRos extends Ros {
   }
 
   connect(url: string) {
-    this.socket = new FoxgloveSocket(url, this);
+    Object.assign(this, { socket: new FoxgloveSocket(url, this) });
   }
 }
