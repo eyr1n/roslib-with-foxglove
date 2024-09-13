@@ -1,9 +1,9 @@
 import './global';
 
 import ROSLIB from 'roslib';
-import { createRos } from './foxglove';
+import { FoxgloveRos } from './FoxgloveRos';
 
-const ros = createRos({});
+const ros = new FoxgloveRos({});
 
 // If there is an error on the backend, an 'error' emit will be emitted.
 ros.on('error', (error) => {

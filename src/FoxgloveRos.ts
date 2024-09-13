@@ -19,9 +19,9 @@ import {
   type ServiceCallResponse,
 } from '@foxglove/ws-protocol';
 import WebSocket from 'isomorphic-ws';
-import type { Ros } from 'roslib';
+import { Ros } from 'roslib';
 
-export class FoxgloveSocket {
+class FoxgloveSocket {
   #client: FoxgloveClient;
   #ros: Ros & { isConnected: boolean };
   #isRos2: boolean;
@@ -107,46 +107,17 @@ export class FoxgloveSocket {
 
   send(message: { op: string }) {
     if (message.op === 'advertise') {
-      this.#advertise(
-        message as unknown as {
-          topic: string;
-          type: string;
-        },
-      );
+      this.#advertise(message as never);
     } else if (message.op === 'unadvertise') {
-      this.#unadvertise(
-        message as unknown as {
-          topic: string;
-        },
-      );
+      this.#unadvertise(message as never);
     } else if (message.op === 'publish') {
-      this.#publish(
-        message as unknown as {
-          topic: string;
-          msg: unknown;
-        },
-      );
+      this.#publish(message as never);
     } else if (message.op === 'subscribe') {
-      this.#subscribe(
-        message as unknown as {
-          topic: string;
-        },
-      );
+      this.#subscribe(message as never);
     } else if (message.op === 'unsubscribe') {
-      this.#unsubscribe(
-        message as unknown as {
-          topic: string;
-        },
-      );
+      this.#unsubscribe(message as never);
     } else if (message.op === 'call_service') {
-      this.#callService(
-        message as unknown as {
-          id: string;
-          service: string;
-          type: string;
-          args: unknown;
-        },
-      );
+      this.#callService(message as never);
     } else {
       console.error('not implemented', message);
     }
@@ -217,49 +188,20 @@ export class FoxgloveSocket {
     id: string;
     service: string;
     type: string;
-    args: unknown;
+    args: never;
   }) {
     if (message.type === 'rosapi/GetParam') {
-      this.#getParam(
-        message as {
-          id: string;
-          args: {
-            name: string;
-          };
-        },
-      );
+      this.#getParam(message);
     } else if (message.type === 'rosapi/SetParam') {
-      this.#setParam(
-        message as {
-          id: string;
-          args: {
-            name: string;
-            value: string;
-          };
-        },
-      );
+      this.#setParam(message);
     } else if (message.type === 'rosapi/Topics') {
       this.#getTopics(message);
     } else if (message.type === 'rosapi/Services') {
       this.#getServices(message);
     } else if (message.type === 'rosapi/TopicType') {
-      this.#getTopicType(
-        message as {
-          id: string;
-          args: {
-            topic: string;
-          };
-        },
-      );
+      this.#getTopicType(message);
     } else if (message.type === 'rosapi/ServiceType') {
-      this.#getServiceType(
-        message as {
-          id: string;
-          args: {
-            service: string;
-          };
-        },
-      );
+      this.#getServiceType(message);
     } else if (message.type.startsWith('rosapi/')) {
       console.error('not implemented', message);
     }
@@ -470,5 +412,27 @@ export class FoxgloveSocket {
         return writer;
       })()
     );
+  }
+}
+
+export class FoxgloveRos extends Ros {
+  socket: FoxgloveSocket | null = null;
+
+  constructor(options: {
+    url?: string;
+  }) {
+    super({
+      ...options,
+      transportOptions: {
+        encoder: (
+          message: unknown,
+          sendEncodedMessage: (message: unknown) => void,
+        ) => sendEncodedMessage(message),
+      } as never,
+    });
+  }
+
+  connect(url: string) {
+    this.socket = new FoxgloveSocket(url, this);
   }
 }
