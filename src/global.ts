@@ -1,1 +1,0 @@
-(globalThis.window as unknown) = {};
